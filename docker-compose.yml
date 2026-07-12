@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: transitops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: transitops
+      POSTGRES_PASSWORD: transitops
+      POSTGRES_DB: transitops
+    ports:
+      - "5432:5432"
+    volumes:
+      - transitops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U transitops -d transitops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: transitops-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      JWT_SECRET: dev-only-secret-change-me
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: transitops
+      PGPASSWORD: transitops
+      PGDATABASE: transitops
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    # Belt-and-suspenders: compose already waits for the postgres healthcheck,
+    # and migrate.js itself retries the DB connection before running schema.sql.
+    command: sh -c "npm run migrate && npm start"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: transitops-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:4000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  transitops_pgdata:

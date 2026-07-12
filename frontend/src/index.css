@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-base-bg text-white;
+  }
+
+  ::selection {
+    @apply bg-accent/30 text-white;
+  }
+
+  * {
+    @apply border-base-border;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-base-panel border border-base-border rounded-lg;
+  }
+
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-hover text-white text-sm font-medium px-4 py-2 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent hover:bg-white/5 text-gray-300 text-sm font-medium px-4 py-2 rounded-md border border-base-border transition-colors;
+  }
+
+  .input-field {
+    @apply bg-base-bg border border-base-border rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border;
+  }
+}
