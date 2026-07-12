@@ -237,16 +237,9 @@ docker compose up --build
 
 ---
 
-# 📸 Screenshots
+# 📸 the Architecture
 
-Add screenshots for:
-
-- Dashboard
-- Fleet Management
-- Driver Management
-- Trip Dispatcher
-- Maintenance
-- Analytics
+<img width="2354" height="379" alt="image" src="https://github.com/user-attachments/assets/52c714cf-3276-4640-b606-d13ab7178fe1" />
 
 ---
 
