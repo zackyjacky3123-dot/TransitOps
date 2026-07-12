@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import StatusBadge from '../components/StatusBadge.jsx';
+import EmptyState from '../components/EmptyState.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { apiFetch } from '../lib/api.js';
 
 const KPI_DEFS = [
@@ -36,6 +38,8 @@ function useDebouncedValue(value, delayMs) {
 }
 
 export default function Dashboard() {
+  const toast = useToast();
+
   const [search, setSearch] = useState('');
   const [type, setType] = useState('All');
   const [status, setStatus] = useState('All');
@@ -76,7 +80,10 @@ export default function Dashboard() {
         return data;
       })
       .then(setSummary)
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        setError(err.message);
+        toast.error(err.message);
+      })
       .finally(() => setLoading(false));
   }, [type, status, region, debouncedSearch]);
 
@@ -146,13 +153,17 @@ export default function Dashboard() {
         {KPI_DEFS.map((kpi) => (
           <div
             key={kpi.key}
-            className="panel p-4"
+            className="panel p-4 transition-all hover:border-gray-600 hover:shadow-lg hover:shadow-black/20"
             style={{ borderLeft: `3px solid ${kpi.color}` }}
           >
             <p className="text-xs font-medium text-gray-400">{kpi.label}</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {loading || !summary ? '—' : `${summary.kpis[kpi.key]}${kpi.suffix || ''}`}
-            </p>
+            {loading || !summary ? (
+              <div className="mt-2 h-7 w-16 animate-pulse rounded bg-white/10" />
+            ) : (
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {summary.kpis[kpi.key]}{kpi.suffix || ''}
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -173,23 +184,31 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {loading && (
-                  <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-500">
-                      Loading trips...
-                    </td>
-                  </tr>
-                )}
+                {loading &&
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-b border-base-border/60 last:border-0">
+                      <td className="py-2.5 pr-3" colSpan={5}>
+                        <div className="h-4 w-full animate-pulse rounded bg-white/5" />
+                      </td>
+                    </tr>
+                  ))}
                 {!loading && summary?.recentTrips.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="py-6 text-center text-gray-500">
-                      No trips match the current filters.
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon="🚚"
+                        title="No trips match the current filters"
+                        description="Try adjusting your search or filters, or dispatch a new trip."
+                      />
                     </td>
                   </tr>
                 )}
                 {!loading &&
                   summary?.recentTrips.map((trip) => (
-                    <tr key={trip.id} className="border-b border-base-border/60 last:border-0">
+                    <tr
+                      key={trip.id}
+                      className="border-b border-base-border/60 transition-colors last:border-0 hover:bg-white/[0.03]"
+                    >
                       <td className="py-2.5 pr-3 font-medium text-gray-200">#{trip.id}</td>
                       <td className="py-2.5 pr-3 text-gray-300">{trip.vehicleRegNo}</td>
                       <td className="py-2.5 pr-3 text-gray-300">{trip.driverName}</td>
@@ -207,7 +226,23 @@ export default function Dashboard() {
         <div className="panel p-4">
           <h2 className="text-sm font-semibold text-white">Vehicle Status</h2>
           <div className="mt-4 space-y-4">
-            {loading && <p className="text-sm text-gray-500">Loading vehicle status...</p>}
+            {loading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="h-4 w-20 animate-pulse rounded bg-white/10" />
+                    <div className="h-4 w-6 animate-pulse rounded bg-white/10" />
+                  </div>
+                  <div className="mt-1.5 h-2 w-full animate-pulse rounded-full bg-white/5" />
+                </div>
+              ))}
+            {!loading && breakdownBars.length === 0 && (
+              <EmptyState
+                icon="🚗"
+                title="No vehicle data yet"
+                description="Register a vehicle to see status breakdown here."
+              />
+            )}
             {!loading &&
               breakdownBars.map((row) => (
                 <div key={row.status}>
@@ -217,7 +252,7 @@ export default function Dashboard() {
                   </div>
                   <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-base-bg">
                     <div
-                      className="h-full rounded-full transition-all"
+                      className="h-full rounded-full transition-all duration-500"
                       style={{
                         width: `${row.pct}%`,
                         backgroundColor: BREAKDOWN_COLORS[row.status],
